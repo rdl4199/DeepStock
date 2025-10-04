@@ -1,2 +1,7 @@
-# DeepStock
-App where the user can gather quick deep analysis of a stock of their choosing.
+# Polyglot Starter (React + Node.js BFF + Go svc + Python svc)
+
+
+## Quick start
+```bash
+# from the repo root
+docker compose up --build
