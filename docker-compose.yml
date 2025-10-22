@@ -14,11 +14,17 @@ services:
       - svc-ml-py
 
   svc-pricing-go:
-    build: ./svc-pricing-go
-    expose:
-      - "8080"
+    build:
+      context: ./svc-pricing-go
+      # use Dockerfile.debug only if you’re running Delve, else omit this line
+      # dockerfile: Dockerfile.debug
     environment:
       ALPHAVANTAGE_API_KEY: ${ALPHAVANTAGE_API_KEY}
+    ports:
+      - "8080:8080"     # service port
+      - "40000:40000"   # Delve (only if using Dockerfile.debug)
+    # if you’re NOT debugging, you can drop the 40000 line
+    restart: unless-stopped
 
   svc-ml-py:
     build: ./svc-ml-py

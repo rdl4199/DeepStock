@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"time"
 )
@@ -27,7 +26,7 @@ type cacheEntry struct {
 var cache = map[string]cacheEntry{}
 
 func main() {
-	apiKey := os.Getenv("ALPHAVANTAGE_API_KEY")
+	apiKey := "B183J50JYZ0L7NSF" //os.Getenv("ALPHAVANTAGE_API_KEY")
 	if apiKey == "" {
 		log.Fatal("ALPHAVANTAGE_API_KEY not set")
 	}
@@ -52,7 +51,7 @@ func main() {
 			return
 		}
 		url := fmt.Sprintf(
-			"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=%s&outputsize=compact&apikey=%s",
+			"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&apikey=%s",
 			symbol, apiKey,
 		)
 		resp, err := http.Get(url)
@@ -69,6 +68,7 @@ func main() {
 		}
 		ts, ok := raw["Time Series (Daily)"].(map[string]any)
 		if !ok {
+			fmt.Println("raw:", raw)
 			http.Error(w, "no time series (rate-limited?)", http.StatusTooManyRequests)
 			return
 		}

@@ -1,0 +1,15 @@
+FROM golang:1.22-alpine
+RUN apk add --no-cache git curl bash ca-certificates
+
+WORKDIR /app
+COPY . .
+
+# Build binary with debugging info
+RUN go mod tidy
+RUN go build -gcflags "all=-N -l" -o svc-debug
+
+EXPOSE 8080 40000
+ENV PORT=8080
+
+# Start Delve server (remote debugger)
+CMD ["dlv", "exec", "/app/svc-debug", "--headless", "--listen=:40000", "--api-version=2", "--accept-multiclient", "--continue"]

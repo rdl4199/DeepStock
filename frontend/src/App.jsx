@@ -5,6 +5,7 @@ const API = import.meta.env.VITE_API_BASE; // http://localhost:3001 (from compos
 
 export default function App() {
   const [symbol, setSymbol] = useState("AAPL");
+  const [symbolHolder, setSymbolHolder] = useState("AAPL");
   const [data, setData] = useState([]);
   const [signals, setSignals] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,10 +33,14 @@ export default function App() {
 
   return (
     <div style={{padding:"24px 28px", maxWidth:1100, margin:"0 auto"}}>
-      <h1 style={{margin:0, fontSize:28}}>📈 {symbol} Daily Close</h1>
+      <h1 style={{margin:0, fontSize:28}}>📈 {symbolHolder} Daily Close</h1>
       <div style={{display:"flex", gap:12, margin:"14px 0 18px"}}>
         <input value={symbol} onChange={e=>setSymbol(e.target.value.toUpperCase())} style={{padding:"10px 12px"}}/>
-        <button onClick={()=>load(symbol)}>Load</button>
+        <button onClick={()=> {
+              load(symbol)
+              setSymbolHolder(symbol)
+            }
+          }>Load</button>
       </div>
       {err && <div style={{color:"#fca5a5"}}>Error: {err}</div>}
       {loading && <div>Loading…</div>}
@@ -46,9 +51,9 @@ export default function App() {
               <CartesianGrid strokeDasharray="3 3" opacity={0.2}/>
               <XAxis dataKey="date" minTickGap={40} tick={{fill:"#9ca3af"}} />
               <YAxis tick={{fill:"#9ca3af"}} domain={["auto","auto"]} />
-              <Tooltip contentStyle={{background:"#0b0c10", border:"1px solid #1f2937", borderRadius:12}}
+              <Tooltip contentStyle={{background:"#ffffffff", border:"1px solid #ffffffff", borderRadius:12}}
                        labelStyle={{color:"#e5e7eb"}} itemStyle={{color:"#e5e7eb"}} />
-              <Line type="monotone" dataKey="close" stroke="currentColor" strokeWidth={2} dot={false}/>
+              <Line type="monotone" dataKey="close" stroke="#ffffff" strokeWidth={2} dot={false}/>
             </LineChart>
           </ResponsiveContainer>
         </div>

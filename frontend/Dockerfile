@@ -1,8 +1,16 @@
+# frontend/Dockerfile
 FROM node:20-alpine
 WORKDIR /app
+
+# install deps first for better caching
 COPY package.json package-lock.json* ./
-RUN npm i
+RUN npm ci
+
+# bring in the app
 COPY . .
+
 EXPOSE 5173
 ENV VITE_API_BASE=${VITE_API_BASE}
-CMD ["npm", "run", "dev"]  # dev server at 0.0.0.0:5173
+
+# IMPORTANT: no inline comment here
+CMD ["npm", "run", "dev"]
