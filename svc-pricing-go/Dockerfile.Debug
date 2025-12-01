@@ -1,15 +1,22 @@
 FROM golang:1.22-alpine
+
+# tools + certs
 RUN apk add --no-cache git curl bash ca-certificates
 
 WORKDIR /app
 COPY . .
 
-# Build binary with debugging info
+# deps + debug build (no optimizations)
 RUN go mod tidy
-RUN go build -gcflags "all=-N -l" -o svc-debug
+ENV CGO_ENABLED=0
+RUN go build -gcflags "all=-N -l" -o /app/svc-debug
+
+# install Delve (go puts it in /root/go/bin)
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+ENV PATH="/root/go/bin:${PATH}"
 
 EXPOSE 8080 40000
 ENV PORT=8080
 
-# Start Delve server (remote debugger)
-CMD ["dlv", "exec", "/app/svc-debug", "--headless", "--listen=:40000", "--api-version=2", "--accept-multiclient", "--continue"]
+# Run Delve in DAP mode (modern). No --api-version here.
+CMD ["dlv", "dap", "--listen=:40000", "--accept-multiclient", "--log"]
