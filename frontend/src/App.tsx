@@ -8,8 +8,10 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import SignalBox from "./SignalBox.tsx";
+import "../styles/App.css";
 
-const API = import.meta.env.VITE_API_BASE as string; // e.g. http://localhost:3001
+const API = import.meta.env.VITE_API_BASE as string;
 
 interface Bar {
   t: string | number | Date;
@@ -27,12 +29,12 @@ interface Signals {
 }
 
 export default function App(): JSX.Element {
-  const [symbol, setSymbol] = useState<string>("AAPL");
-  const [symbolHolder, setSymbolHolder] = useState<string>("AAPL");
+  const [symbol, setSymbol] = useState("AAPL");
+  const [symbolHolder, setSymbolHolder] = useState("AAPL");
   const [data, setData] = useState<{ date: string; close: number }[]>([]);
   const [signals, setSignals] = useState<Signals | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [err, setErr] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
 
   async function load(sym: string): Promise<void> {
     setLoading(true);
@@ -65,19 +67,20 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     load(symbol);
-  }, []); // initial load
+  }, []);
 
   return (
-    <div style={{ padding: "24px 28px", maxWidth: 1100, margin: "0 auto" }}>
-      <h1 style={{ margin: 0, fontSize: 28 }}>📈 {symbolHolder} Daily Close</h1>
+    <div className="app-container">
+      <h1 className="app-title">📈 {symbolHolder} Daily Close</h1>
 
-      <div style={{ display: "flex", gap: 12, margin: "14px 0 18px" }}>
+      <div className="symbol-controls">
         <input
+          className="symbol-input"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          style={{ padding: "10px 12px" }}
         />
         <button
+          className="load-button"
           onClick={() => {
             load(symbol);
             setSymbolHolder(symbol);
@@ -87,37 +90,24 @@ export default function App(): JSX.Element {
         </button>
       </div>
 
-      {err && <div style={{ color: "#fca5a5" }}>Error: {err}</div>}
-      {loading && <div>Loading…</div>}
+      {err && <div className="error-text">Error: {err}</div>}
+      {loading && <div className="loading-text">Loading…</div>}
 
       {!loading && data.length > 0 && (
-        <div
-          style={{
-            height: 420,
-            background: "#0f1115",
-            border: "1px solid #1f2937",
-            borderRadius: 12,
-            padding: 12,
-          }}
-        >
+        <div className="chart-wrapper">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data}
               margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis
-                dataKey="date"
-                minTickGap={40}
-                tick={{ fill: "#9ca3af" }}
-              />
+              <XAxis dataKey="date" minTickGap={40} tick={{ fill: "#9ca3af" }} />
               <YAxis tick={{ fill: "#9ca3af" }} domain={["auto", "auto"]} />
               <Tooltip
-                contentStyle={{
-                  background: "#000000",
+                contentStyle={{background: "#000000",
                   border: "1px solid #ffffff",
-                  borderRadius: 12,
-                }}
+                  borderRadius: 12,}}
+                wrapperClassName="tooltip"
                 labelStyle={{ color: "#e5e7eb" }}
                 itemStyle={{ color: "#e5e7eb" }}
               />
@@ -134,16 +124,51 @@ export default function App(): JSX.Element {
       )}
 
       {signals && (
-        <div style={{ marginTop: 10, opacity: 0.8, fontSize: 12 }}>
-          SMA20 last:{" "}
-          {signals.sma20?.at(-1)?.value?.toFixed(2) ?? "--"} | RSI14 last:{" "}
-          {signals.rsi14?.at(-1)?.value?.toFixed(1) ?? "--"}
+        <div className="signals-container">
+          <SignalBox
+            label="Trend"
+            display={`SMA20 fc last: ${
+              signals.sma20?.at(-1)?.value?.toFixed(2) ?? "--"
+            } | EMA20: ${
+              signals.ema20?.at(-1)?.value?.toFixed(1) ?? "--"
+            } | EMA50: ${
+              signals.ema50?.at(-1)?.value?.toFixed(1) ?? "--"
+            } | EMA200: ${
+              signals.ema200?.at(-1)?.value?.toFixed(1) ?? "--"
+            }`}
+          />
+          <SignalBox
+            label="Momentum"
+            display={`RSI14 last: ${
+              signals.rsi14?.at(-1)?.value?.toFixed(2) ?? "--"
+            } | MACD: ${
+              signals.macd?.at(-1)?.value?.toFixed(2) ?? "--"
+            } | StochRSI: ${
+              signals.stoch_rsi?.at(-1)?.value?.toFixed(2) ?? "--"
+            }`}
+          />          
+          <SignalBox
+            label="Volatility"
+            display={`ATR14 last: ${
+              signals.atr14?.at(-1)?.value?.toFixed(2) ?? "--"
+            } | Bollinger Bands (20,2): ${
+              signals.bollinger20?.at(-1)?.value?.toFixed(2) ?? "--"
+            }`}
+          />
+          <SignalBox
+            label="Volume"
+            display={`OBV last: ${
+              signals.obv?.at(-1)?.value?.toFixed(0) ?? "--"
+            } | Volume SMA20: ${
+              signals.vol_sma20?.at(-1)?.value?.toFixed(0) ?? "--"
+            } | VWAP: ${
+              signals.vwap?.at(-1)?.value?.toFixed(2) ?? "--"
+            }`}
+          />
         </div>
       )}
-   
-      <footer style={{ marginTop: 18, opacity: 0.6, fontSize: 12 }}>
-        Gateway: {API}
-      </footer>
+
+      <footer className="footer">Gateway: {API}</footer>
     </div>
   );
 }

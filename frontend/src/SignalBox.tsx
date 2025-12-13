@@ -1,12 +1,11 @@
 import React from "react";
-
-export default function SignalBox({ label, value }: { label: string; value?: number | null }) {
-  const display = value == null || Number.isNaN(value) ? "--" : value.toFixed(2);
+import "../styles/SignalBox.css";
+export default function SignalBox({ label, display }: { label: string; display: string}) {
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 w-40 text-slate-200">
-      <div className="text-xs text-slate-400 mb-1 uppercase tracking-wide">{label}</div>
-      <div className="text-xl font-semibold tabular-nums">{display}</div>
+    <div className="signalInfoBox">
+      <div className="signalLabel">{label}</div>
+      <div className="signalDisplay">{display}</div>
     </div>
   );
 }
