@@ -197,4 +197,14 @@ async def signals(symbol: str = Query(..., min_length=1)):
         for i, v in vwap.items()
     ]
 
+    print('len(df)=', len(df))
+    print(df.dtypes)
+    print(df[['c','v']].head())
+    print(df[['c','v']].tail())
+    print('NaNs:\n', df[['c','v','h','l']].isna().sum())
+    print('zero volume count:', int((df['v']==0).sum()) if 'v' in df else 'no v col')
+    print('any inf?', np.isinf(df.select_dtypes(include='number')).any().to_dict())
+
+
+
     return out

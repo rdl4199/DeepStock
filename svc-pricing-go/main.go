@@ -81,7 +81,7 @@ func main() {
 			h := atof(row["2. high"])
 			l := atof(row["3. low"])
 			c := atof(row["4. close"])
-			vol := atof(row["6. volume"])
+			vol := atof(row["5. volume"])
 			bars = append(bars, Bar{T: t, O: o, H: h, L: l, C: c, V: vol})
 		}
 		sort.Slice(bars, func(i, j int) bool { return bars[i].T.Before(bars[j].T) })
