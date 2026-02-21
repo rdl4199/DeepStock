@@ -1,13 +1,221 @@
-/* App.css */
-.menu-container {
+.hamburgerBtn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  cursor: pointer;
+  padding: 0;
+  color: #111827;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.hamburgerBtn:hover {
+  background: rgba(17, 24, 39, 0.06);
+}
+
+.hamburgerBtn:active {
+  transform: translateY(1px);
+}
+
+.hamburgerBtn:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 2px;
+}
+
+.bar {
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
+
+/* Overlay (only exists when open now) */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 9998;
+}
+
+/* Left drawer: white, clean, modern */
+.leftDrawer {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
+  height: 100vh;
+  width: min(340px, 88vw);
+
+  background: #ffffff;
+  color: #111827;
+
+  border-right: 1px solid #e5e7eb;
+  box-shadow: 16px 0 40px rgba(0, 0, 0, 0.18);
+
+  z-index: 9999;
+
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
 }
+/* Fix width + padding overflow everywhere */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 14px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.drawerTitle {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.drawerClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.drawerClose:hover {
+  background: #f3f4f6;
+}
+
+.drawerClose:active {
+  transform: translateY(1px);
+}
+
+.drawerNav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawerLink {
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;   /* extra safety even with global reset */
+
+  display: flex;
+  align-items: center;
+
+  border: 1px solid transparent;
+  background: transparent;
+
+  color: #111827;
+  text-decoration: none;
+  cursor: pointer;
+
+  font: inherit;            /* buttons won't look “button-y” */
+  line-height: 1.2;
+  -webkit-appearance: none;
+  appearance: none;
+
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.drawerLink:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.drawerLink:active {
+  background: #eef2f7;
+}
+
+
+/* Sticky white top bar that matches modern UI */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.topbar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 28px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.topbar-icon {
+  font-size: 18px;
+}
+
+.topbar-spacer {
+  flex: 1;
+}
+
+/* keep controls in the header and aligned */
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* on small screens, let stuff wrap nicely */
+@media (max-width: 640px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+  }
+  .topbar-spacer {
+    display: none;
+  }
+  .topbar-controls {
+    width: 100%;
+  }
+}
+
+
+.menu-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 28px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 
 .app-container {
   padding: 24px 28px;

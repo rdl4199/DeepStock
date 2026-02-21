@@ -72,7 +72,7 @@ export default function App(): JSX.Element {
 
   return (
     <div className="menu-container">
-      <HamburgerMenu />
+      <HamburgerMenu items={[{ label: "Home", href: "/" }]} />
       <div className="app-container">
         <h1 className="app-title">📈 {symbolHolder} Daily Close</h1>
 
