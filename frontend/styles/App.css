@@ -1,220 +1,139 @@
-.hamburgerBtn {
-  width: 40px;
-  height: 40px;
+/* ===== Sidebar menu (no overlay) ===== */
+
+.cgSidebarRoot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10050;
+}
+
+/* Toggle button (top-left) */
+.cgSidebarToggle {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+
+  width: 36px;
+  height: 36px;
   border: 0;
-  background: transparent;
-  border-radius: 12px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #111827;
 
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
 
   cursor: pointer;
   padding: 0;
-  color: #111827;
-  transition: background 120ms ease, transform 120ms ease;
+  appearance: none;
+  -webkit-appearance: none;
+
+  transition: background 120ms ease;
+  z-index: 10051;
 }
 
-.hamburgerBtn:hover {
-  background: rgba(17, 24, 39, 0.06);
+.cgSidebarToggle:hover {
+  background: #e5e7eb;
 }
 
-.hamburgerBtn:active {
-  transform: translateY(1px);
-}
-
-.hamburgerBtn:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.45);
-  outline-offset: 2px;
-}
-
-.bar {
-  width: 18px;
-  height: 2px;
+.cgSidebarBar {
+  width: 16px;
+  height: 1.8px;
   background: currentColor;
   border-radius: 999px;
 }
 
-
-/* Overlay (only exists when open now) */
-.drawerOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(17, 24, 39, 0.35);
-  backdrop-filter: blur(2px);
-  z-index: 9998;
-}
-
-/* Left drawer: white, clean, modern */
-.leftDrawer {
+/* Real sidebar panel */
+.cgSidebarPanel {
   position: fixed;
   top: 0;
   left: 0;
+
+  width: 260px;
   height: 100vh;
-  width: min(340px, 88vw);
-
   background: #ffffff;
-  color: #111827;
-
   border-right: 1px solid #e5e7eb;
-  box-shadow: 16px 0 40px rgba(0, 0, 0, 0.18);
 
-  z-index: 9999;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  overflow: hidden;
 
+  /* hidden by default */
+  transform: translateX(-100%);
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease;
+
+  z-index: 10050;
+  padding-top: 56px; /* leaves room for the top-left toggle button */
+}
+
+.cgSidebarPanel.is-open {
+  transform: translateX(0);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.08);
+}
+
+.cgSidebarHeader {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cgSidebarNav {
+  padding: 6px;
   display: flex;
   flex-direction: column;
-}
-/* Fix width + padding overflow everywhere */
-*, *::before, *::after {
-  box-sizing: border-box;
+  gap: 2px;
 }
 
-.drawerHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 14px 14px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.drawerTitle {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.drawerClose {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
-
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  transition: background 120ms ease, transform 120ms ease;
-}
-
-.drawerClose:hover {
-  background: #f3f4f6;
-}
-
-.drawerClose:active {
-  transform: translateY(1px);
-}
-
-.drawerNav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.drawerLink {
-  padding: 12px;
+.cgSidebarItem {
   width: 100%;
-  box-sizing: border-box;   /* extra safety even with global reset */
+  box-sizing: border-box;
 
   display: flex;
   align-items: center;
+  text-align: left;
 
   border: 1px solid transparent;
   background: transparent;
-
   color: #111827;
+
+  font: inherit;
+  font-size: 14px;
   text-decoration: none;
+
+  padding: 10px 10px;
+  border-radius: 10px;
   cursor: pointer;
 
-  font: inherit;            /* buttons won't look “button-y” */
-  line-height: 1.2;
-  -webkit-appearance: none;
   appearance: none;
+  -webkit-appearance: none;
 
   transition: background 120ms ease, border-color 120ms ease;
 }
 
-.drawerLink:hover {
+.cgSidebarItem:hover {
   background: #f3f4f6;
   border-color: #e5e7eb;
 }
 
-.drawerLink:active {
-  background: #eef2f7;
-}
+/* ===== App content spacing ===== */
 
-
-/* Sticky white top bar that matches modern UI */
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10000;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.topbar-inner {
+/* Leave room for the top-left hamburger even when closed */
+.app-container {
+  padding: 24px 28px 24px 72px; /* left padding prevents title under button */
   max-width: 1100px;
   margin: 0 auto;
-  padding: 10px 28px;
-
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  transition: padding-left 180ms cubic-bezier(.2,.8,.2,1);
 }
 
-.topbar-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  font-weight: 700;
-  font-size: 20px;
+/* Push content right when menu is open */
+body.menu-open .app-container {
+  padding-left: 300px; /* 260 sidebar + some spacing */
 }
 
-.topbar-icon {
-  font-size: 18px;
-}
-
-.topbar-spacer {
-  flex: 1;
-}
-
-/* keep controls in the header and aligned */
-.topbar-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* on small screens, let stuff wrap nicely */
-@media (max-width: 640px) {
-  .topbar-inner {
-    flex-wrap: wrap;
-  }
-  .topbar-spacer {
-    display: none;
-  }
-  .topbar-controls {
-    width: 100%;
-  }
-}
-
-
-.menu-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 12px 28px;
-
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
 
 
 .app-container {

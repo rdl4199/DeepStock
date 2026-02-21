@@ -4,92 +4,79 @@ type MenuItem = { label: string; href?: string; onClick?: () => void };
 
 export default function HamburgerMenu({ items }: { items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
-  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const onMouseDown = (e: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
 
     document.addEventListener("keydown", onKeyDown);
-    drawerRef.current?.focus();
+    document.addEventListener("mousedown", onMouseDown);
 
     return () => {
-      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onMouseDown);
     };
+  }, []);
+
+  // Push app content when sidebar opens
+  useEffect(() => {
+    document.body.classList.toggle("menu-open", open);
+    return () => document.body.classList.remove("menu-open");
   }, [open]);
 
   return (
-    <>
+    <div className="cgSidebarRoot" ref={rootRef}>
       <button
         type="button"
-        className="hamburgerBtn"
-        aria-label="Open menu"
+        className="cgSidebarToggle"
+        aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((v) => !v)}
       >
-        <span className="bar" />
-        <span className="bar" />
-        <span className="bar" />
+        <span className="cgSidebarBar" />
+        <span className="cgSidebarBar" />
+        <span className="cgSidebarBar" />
       </button>
 
-      {open && (
-        <>
-          <div className="drawerOverlay" onClick={() => setOpen(false)} />
-          <aside
-            className="leftDrawer leftDrawerOpen"
-            role="dialog"
-            aria-modal="true"
-            tabIndex={-1}
-            ref={drawerRef}
-          >
-            <div className="drawerHeader">
-              <div className="drawerTitle">Menu</div>
-              <button
-                type="button"
-                className="drawerClose"
-                aria-label="Close menu"
+      <aside className={`cgSidebarPanel ${open ? "is-open" : ""}`} aria-hidden={!open}>
+        <div className="cgSidebarHeader">Menu</div>
+
+        <nav className="cgSidebarNav">
+          {items.map((item) =>
+            item.href ? (
+              <a
+                key={item.label}
+                className="cgSidebarItem"
+                href={item.href}
                 onClick={() => setOpen(false)}
               >
-                ✕
+                {item.label}
+              </a>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                className="cgSidebarItem"
+                onClick={() => {
+                  item.onClick?.();
+                  setOpen(false);
+                }}
+              >
+                {item.label}
               </button>
-            </div>
-
-            <nav className="drawerNav">
-              {items.map((item) =>
-                item.href ? (
-                  <a
-                    key={item.label}
-                    className="drawerLink"
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.label}
-                  </a>
-                ) : (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className="drawerLink"
-                    onClick={() => {
-                      item.onClick?.();
-                      setOpen(false);
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                )
-              )}
-            </nav>
-          </aside>
-        </>
-      )}
-    </>
+            )
+          )}
+        </nav>
+      </aside>
+    </div>
   );
 }
