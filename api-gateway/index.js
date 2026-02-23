@@ -25,6 +25,16 @@ app.get("/api/series", async (req, res) => {
   }
 });
 
+app.get("/api/series-mongo", async (req, res) => {
+  try {
+    const r = await fetch(`${PRICE_SVC_URL}/mongo`);
+    if (!r.ok) throw new Error(`status ${r.status}`);
+    res.sendStatus(204);
+  } catch (e) {
+    res.status(502).json({ error: "pricing service unavailable", detail: String(e) });
+  }
+});
+
 // Proxy indicators: /api/signals?symbol=AAPL
 app.get("/api/signals", async (req, res) => {
   const { symbol } = req.query;

@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type Bar struct {
@@ -90,6 +96,15 @@ func main() {
 		respondJSON(w, bars)
 	})
 
+	mux.HandleFunc("/mongo", func(w http.ResponseWriter, r *http.Request) {
+		mongBars, err := fetchFromMongo()
+		if err != nil {
+			http.Error(w, "mongo error", http.StatusBadGateway)
+			return
+		}
+		respondJSON(w, mongBars)
+	})
+
 	log.Println("svc-pricing-go listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
@@ -116,4 +131,27 @@ func enableCORS(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func fetchFromMongo() (bson.M, error) {
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		return nil, fmt.Errorf("MONGODB_URI is not set")
+	}
+
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
+	defer client.Disconnect(context.TODO())
+
+	coll := client.Database("sample_mflix").Collection("movies")
+	var result bson.M
+
+	err = coll.FindOne(context.TODO(), bson.D{{"title", "Gertie the Dinosaur"}}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
