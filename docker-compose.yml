@@ -19,7 +19,7 @@ services:
       # use Dockerfile.debug only if you’re running Delve, else omit this line
       # dockerfile: Dockerfile.debug
     environment:
-      MONGODB_URI: "mongodb+srv://<db_username>:<db_password>@cluster0.qruelfp.mongodb.net/"
+      MONGODB_URI: "mongodb+srv://Dezaran:LodwickTest@cluster0.qruelfp.mongodb.net/"
       ALPHAVANTAGE_API_KEY: ${ALPHAVANTAGE_API_KEY}
     ports:
       - "8080:8080"     # service port

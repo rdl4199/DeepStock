@@ -29,12 +29,21 @@ app.get("/api/series-mongo", async (req, res) => {
   try {
     const r = await fetch(`${PRICE_SVC_URL}/mongo`);
     const body = await r.text();
+
     if (!r.ok) throw new Error(`status ${r.status}`);
-    res.sendStatus(r.status).type(r.headers.get("content-type") || "application/json").send(body);
+
+    return res
+      .status(r.status)
+      .type(r.headers.get("content-type") || "application/json")
+      .send(body);
   } catch (e) {
-    res.status(502).json({ error: "pricing service unavailable", detail: String(e) });
+    return res.status(502).json({
+      error: "pricing service unavailable",
+      detail: String(e),
+    });
   }
 });
+
 
 // Proxy indicators: /api/signals?symbol=AAPL
 app.get("/api/signals", async (req, res) => {

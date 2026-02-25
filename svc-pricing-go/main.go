@@ -135,6 +135,7 @@ func respondJSON(w http.ResponseWriter, v any) {
 
 func fetchFromMongo() (bson.M, error) {
 	uri := os.Getenv("MONGODB_URI")
+	log.Printf(uri)
 	if uri == "" {
 		return nil, fmt.Errorf("MONGODB_URI is not set")
 	}
@@ -150,6 +151,7 @@ func fetchFromMongo() (bson.M, error) {
 
 	err = coll.FindOne(context.TODO(), bson.D{{"title", "Gertie the Dinosaur"}}).Decode(&result)
 	if err != nil {
+		log.Printf("MongoDB query error: %v", err)
 		return nil, err
 	}
 
