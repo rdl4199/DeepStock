@@ -157,3 +157,34 @@ func fetchFromMongo() (bson.M, error) {
 
 	return result, nil
 }
+
+func updateMovieByTitle(title string) (int64, error) {
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		return 0, fmt.Errorf("MONGODB_URI is not set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		return 0, err
+	}
+	defer client.Disconnect(ctx)
+
+	coll := client.Database("sample_mflix").Collection("movies")
+
+	filter := bson.D{{"title", title}}
+	update := bson.D{{"$set", bson.D{
+		{"lastupdated", time.Now()},
+		{"notes", "updated from Go"},
+	}}}
+
+	res, err := coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.ModifiedCount, nil
+}
