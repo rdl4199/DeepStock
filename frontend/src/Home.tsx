@@ -55,8 +55,14 @@ export default function Home(): JSX.Element {
       }));
       setData(rows);
 
-      if (sRes.ok) setSignals(await sRes.json());
-      else setSignals(null);
+      if (sRes.ok) 
+      {
+        setSignals(await sRes.json());
+      }
+      else 
+      {
+        setSignals(null);
+      }
     } catch (e: any) {
       setErr(String(e.message || e));
       setData([]);
@@ -126,10 +132,12 @@ export default function Home(): JSX.Element {
               </LineChart>
             </ResponsiveContainer>
           </div>
+
         )}
 
         {signals && (
           <div className="signals-container">
+            <SignalBox label="Price data" display={`Last close: ${data.at(-1)?.close.toFixed(2) ?? "--"}`} />
             <SignalBox
               label="Trend"
               display={`SMA20 fc last: ${signals.sma20?.at(-1)?.value?.toFixed(2) ?? "--"
@@ -160,6 +168,36 @@ export default function Home(): JSX.Element {
             />
           </div>
         )}
+
+        {!loading && data.length > 0 && (
+  <div className="saveButton">
+    <button
+      onClick={() => {
+        const latestSignals = Object.fromEntries(
+          Object.entries(signals).map(([key, value]) => [
+            key,
+            Array.isArray(value)
+              ? value.length > 0
+                ? [value[value.length - 1]]
+                : []
+              : value,
+          ])
+        );
+
+        const toSave = {
+          symbol,
+          data: data.length > 0 ? [data[data.length - 1]] : [],
+          signals: latestSignals,
+        };
+
+        localStorage.setItem(`saved_${symbol}`, JSON.stringify(toSave));
+        alert(`Saved latest ${symbol} data to localStorage!`);
+      }}
+    >
+      Save Data
+    </button>
+  </div>
+)}
 
         <footer className="footer">Gateway: {API}</footer>
       </div>
