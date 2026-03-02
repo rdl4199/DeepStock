@@ -55,12 +55,10 @@ export default function Home(): JSX.Element {
       }));
       setData(rows);
 
-      if (sRes.ok) 
-      {
+      if (sRes.ok) {
         setSignals(await sRes.json());
       }
-      else 
-      {
+      else {
         setSignals(null);
       }
     } catch (e: any) {
@@ -170,34 +168,34 @@ export default function Home(): JSX.Element {
         )}
 
         {!loading && data.length > 0 && (
-  <div className="saveButton">
-    <button
-      onClick={() => {
-        const latestSignals = Object.fromEntries(
-          Object.entries(signals).map(([key, value]) => [
-            key,
-            Array.isArray(value)
-              ? value.length > 0
-                ? [value[value.length - 1]]
-                : []
-              : value,
-          ])
-        );
+          <div className="saveButton">
+            <button
+              onClick={() => {
+                const latestSignals = Object.fromEntries(
+                  Object.entries(signals).map(([key, value]) => [
+                    key,
+                    Array.isArray(value)
+                      ? value.length > 0
+                        ? [value[value.length - 1]]
+                        : []
+                      : value,
+                  ])
+                );
 
-        const toSave = {
-          symbol,
-          data: data.length > 0 ? [data[data.length - 1]] : [],
-          signals: latestSignals,
-        };
+                const toSave = {
+                  symbol,
+                  data: data.length > 0 ? [data[data.length - 1]] : [],
+                  signals: latestSignals,
+                };
 
-        localStorage.setItem(`saved_${symbol}`, JSON.stringify(toSave));
-        alert(`Saved latest ${symbol} data to localStorage!`);
-      }}
-    >
-      Save Data
-    </button>
-  </div>
-)}
+                localStorage.setItem(`saved_${symbol}`, JSON.stringify(toSave));
+                alert(`Saved latest ${symbol} data to localStorage!`);
+              }}
+            >
+              Save Data
+            </button>
+          </div>
+        )}
 
         <footer className="footer">Gateway: {API}</footer>
       </div>

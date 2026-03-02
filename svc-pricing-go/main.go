@@ -158,33 +158,94 @@ func fetchFromMongo() (bson.M, error) {
 	return result, nil
 }
 
-func updateMovieByTitle(title string) (int64, error) {
+type PricePoint struct {
+	Date  string  `json:"date" bson:"date"`
+	Close float64 `json:"close" bson:"close"`
+}
+
+type SavedStock struct {
+	Symbol  string         `json:"symbol" bson:"symbol"`
+	Data    []PricePoint   `json:"data" bson:"data"`
+	Signals map[string]any `json:"signals" bson:"signals"`
+}
+
+// keeps array shape, but only the newest item in each array
+func latestOnlySignals(signals map[string]any) map[string]any {
+	out := make(map[string]any, len(signals))
+
+	for key, val := range signals {
+		switch v := val.(type) {
+		case []any:
+			if len(v) > 0 {
+				out[key] = []any{v[len(v)-1]}
+			} else {
+				out[key] = []any{}
+			}
+		default:
+			// e.g. signals.symbol
+			out[key] = v
+		}
+	}
+
+	return out
+}
+
+// updates if symbol exists, inserts if it does not
+func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64, inserted bool, err error) {
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
-		return 0, fmt.Errorf("MONGODB_URI is not set")
+		return 0, 0, false, fmt.Errorf("MONGODB_URI is not set")
+	}
+
+	if stock.Symbol == "" {
+		return 0, 0, false, fmt.Errorf("stock.Symbol is required")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		return 0, err
+		return 0, 0, false, err
 	}
 	defer client.Disconnect(ctx)
 
-	coll := client.Database("sample_mflix").Collection("movies")
+	// Better than writing stock docs into sample_mflix.movies
+	coll := client.Database("sample_mflix").Collection("saved_stocks")
 
-	filter := bson.D{{"title", title}}
-	update := bson.D{{"$set", bson.D{
-		{"lastupdated", time.Now()},
-		{"notes", "updated from Go"},
-	}}}
-
-	res, err := coll.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return 0, err
+	// normalize payload so backend handles either full history or latest-only input
+	normalizedData := stock.Data
+	if len(normalizedData) > 1 {
+		normalizedData = normalizedData[len(normalizedData)-1:]
 	}
 
-	return res.ModifiedCount, nil
+	normalizedSignals := latestOnlySignals(stock.Signals)
+
+	now := time.Now().UTC()
+
+	filter := bson.M{
+		"symbol": stock.Symbol,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"symbol":    stock.Symbol,
+			"data":      normalizedData,
+			"signals":   normalizedSignals,
+			"updatedAt": now,
+		},
+		"$setOnInsert": bson.M{
+			"createdAt": now,
+		},
+	}
+
+	opts := options.Update().SetUpsert(true)
+
+	res, err := coll.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, 0, false, err
+	}
+
+	inserted = res.UpsertedID != nil
+	return res.MatchedCount, res.ModifiedCount, inserted, nil
 }
