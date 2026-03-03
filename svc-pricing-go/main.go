@@ -169,7 +169,6 @@ type SavedStock struct {
 	Signals map[string]any `json:"signals" bson:"signals"`
 }
 
-// keeps array shape, but only the newest item in each array
 func latestOnlySignals(signals map[string]any) map[string]any {
 	out := make(map[string]any, len(signals))
 
@@ -182,7 +181,6 @@ func latestOnlySignals(signals map[string]any) map[string]any {
 				out[key] = []any{}
 			}
 		default:
-			// e.g. signals.symbol
 			out[key] = v
 		}
 	}
@@ -190,13 +188,11 @@ func latestOnlySignals(signals map[string]any) map[string]any {
 	return out
 }
 
-// updates if symbol exists, inserts if it does not
 func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64, inserted bool, err error) {
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
 		return 0, 0, false, fmt.Errorf("MONGODB_URI is not set")
 	}
-
 	if stock.Symbol == "" {
 		return 0, 0, false, fmt.Errorf("stock.Symbol is required")
 	}
@@ -204,23 +200,21 @@ func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	// v2 driver: no ctx passed to Connect
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return 0, 0, false, err
 	}
 	defer client.Disconnect(ctx)
 
-	// Better than writing stock docs into sample_mflix.movies
 	coll := client.Database("sample_mflix").Collection("saved_stocks")
 
-	// normalize payload so backend handles either full history or latest-only input
 	normalizedData := stock.Data
 	if len(normalizedData) > 1 {
 		normalizedData = normalizedData[len(normalizedData)-1:]
 	}
 
 	normalizedSignals := latestOnlySignals(stock.Signals)
-
 	now := time.Now().UTC()
 
 	filter := bson.M{
@@ -239,7 +233,8 @@ func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64
 		},
 	}
 
-	opts := options.Update().SetUpsert(true)
+	// v2 driver: UpdateOne builder
+	opts := options.UpdateOne().SetUpsert(true)
 
 	res, err := coll.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
