@@ -105,8 +105,35 @@ func main() {
 		respondJSON(w, mongBars)
 	})
 
-	mux.HandleFunc("/putSavedStocks", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/postSavedStocks", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
+		defer r.Body.Close()
+
+		var stock SavedStock
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+
+		if err := decoder.Decode(&stock); err != nil {
+			http.Error(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		matchedCount, modifiedCount, inserted, err := upsertSavedStock(stock)
+		if err != nil {
+			http.Error(w, "failed to save stock: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"matchedCount":  matchedCount,
+			"modifiedCount": modifiedCount,
+			"inserted":      inserted,
+		})
 	})
 
 	log.Println("svc-pricing-go listening on :8080")
