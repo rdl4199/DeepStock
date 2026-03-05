@@ -96,13 +96,17 @@ func main() {
 		respondJSON(w, bars)
 	})
 
-	mux.HandleFunc("/mongo", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/getSavedStocks", func(w http.ResponseWriter, r *http.Request) {
 		mongBars, err := fetchFromMongo()
 		if err != nil {
 			http.Error(w, "mongo error", http.StatusBadGateway)
 			return
 		}
 		respondJSON(w, mongBars)
+	})
+
+	mux.HandleFunc("/putSavedStocks", func(w http.ResponseWriter, r *http.Request) {
+
 	})
 
 	log.Println("svc-pricing-go listening on :8080")
@@ -146,7 +150,7 @@ func fetchFromMongo() (bson.M, error) {
 	}
 	defer client.Disconnect(context.TODO())
 
-	coll := client.Database("sample_mflix").Collection("movies")
+	coll := client.Database("SavedStocks").Collection("SavedStocks")
 	var result bson.M
 
 	err = coll.FindOne(context.TODO(), bson.D{{"title", "Gertie the Dinosaur"}}).Decode(&result)
@@ -207,7 +211,7 @@ func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64
 	}
 	defer client.Disconnect(ctx)
 
-	coll := client.Database("sample_mflix").Collection("saved_stocks")
+	coll := client.Database("SavedStocks").Collection("SavedStocks")
 
 	normalizedData := stock.Data
 	if len(normalizedData) > 1 {
