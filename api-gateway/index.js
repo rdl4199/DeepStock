@@ -58,4 +58,32 @@ app.get("/api/signals", async (req, res) => {
   }
 });
 
+// Save a stock snapshot: frontend -> node -> go
+app.post("/api/saved-stocks", async (req, res) => {
+  if (!PRICE_SVC_URL) {
+    return res.status(500).json({ error: "PRICE_SVC_URL is not set" });
+  }
+
+  try {
+    // Change the path/method below to match your Go route exactly.
+    // If your Go route is mux.HandleFunc("/postSavedStocks", ...) expecting PUT:
+    const r = await fetch(`${PRICE_SVC_URL}/postSavedStocks`, {
+      method: "POST", // or "PUT" if you make your Go handler PUT
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+
+    const body = await r.text();
+    return res
+      .status(r.status)
+      .type(r.headers.get("content-type") || "application/json")
+      .send(body);
+  } catch (e) {
+    return res.status(502).json({
+      error: "go pricing service unavailable",
+      detail: String(e),
+    });
+  }
+});
+
 app.listen(PORT, () => console.log(`api-gateway on :${PORT}`));

@@ -170,17 +170,20 @@ export default function Home(): JSX.Element {
         {!loading && data.length > 0 && (
           <div className="saveButton">
             <button
-              onClick={() => {
-                const latestSignals = Object.fromEntries(
-                  Object.entries(signals).map(([key, value]) => [
-                    key,
-                    Array.isArray(value)
-                      ? value.length > 0
-                        ? [value[value.length - 1]]
-                        : []
-                      : value,
-                  ])
-                );
+              onClick={async () => {
+                const latestSignals =
+                  signals
+                    ? Object.fromEntries(
+                      Object.entries(signals).map(([key, value]) => [
+                        key,
+                        Array.isArray(value)
+                          ? value.length > 0
+                            ? [value[value.length - 1]]
+                            : []
+                          : value,
+                      ])
+                    )
+                    : {};
 
                 const toSave = {
                   symbol,
@@ -188,8 +191,19 @@ export default function Home(): JSX.Element {
                   signals: latestSignals,
                 };
 
-                localStorage.setItem(`saved_${symbol}`, JSON.stringify(toSave));
-                alert(`Saved latest ${symbol} data to localStorage!`);
+                const resp = await fetch(`${API}/api/saved-stocks`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(toSave),
+                });
+
+                if (!resp.ok) {
+                  const msg = await resp.text();
+                  alert(`Save failed: ${msg}`);
+                  return;
+                }
+
+                alert(`Saved ${symbol} to Mongo via Go ✅`);
               }}
             >
               Save Data
