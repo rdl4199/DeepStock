@@ -27,7 +27,7 @@ app.get("/api/series", async (req, res) => {
 
 app.get("/api/series-mongo", async (req, res) => {
   try {
-    const r = await fetch(`${PRICE_SVC_URL}/mongo`);
+    const r = await fetch(`${PRICE_SVC_URL}/getSavedStocks`);
     const body = await r.text();
 
     if (!r.ok) throw new Error(`status ${r.status}`);

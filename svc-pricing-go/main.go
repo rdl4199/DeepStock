@@ -97,7 +97,7 @@ func main() {
 	})
 
 	mux.HandleFunc("/getSavedStocks", func(w http.ResponseWriter, r *http.Request) {
-		mongBars, err := fetchFromMongo()
+		mongBars, err := fetchAllFromMongo()
 		if err != nil {
 			http.Error(w, "mongo error", http.StatusBadGateway)
 			return
@@ -164,29 +164,35 @@ func respondJSON(w http.ResponseWriter, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func fetchFromMongo() (bson.M, error) {
+func fetchAllFromMongo() ([]bson.M, error) {
 	uri := os.Getenv("MONGODB_URI")
-	log.Printf(uri)
 	if uri == "" {
 		return nil, fmt.Errorf("MONGODB_URI is not set")
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect(context.TODO())
+	defer client.Disconnect(ctx)
 
 	coll := client.Database("SavedStocks").Collection("SavedStocks")
-	var result bson.M
 
-	err = coll.FindOne(context.TODO(), bson.D{{"title", "Gertie the Dinosaur"}}).Decode(&result)
+	cur, err := coll.Find(ctx, bson.D{}) // empty filter = everything
 	if err != nil {
-		log.Printf("MongoDB query error: %v", err)
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var results []bson.M
+	if err := cur.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return results, nil
 }
 
 type PricePoint struct {
