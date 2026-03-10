@@ -211,3 +211,93 @@ body.menu-open .app-container {
   margin-bottom: 6px;
   color: #9ca3af;
 }
+
+.savedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.savedCard {
+  background: #0f1115;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px;
+  color: #e5e7eb;
+}
+
+.savedTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.savedSymbol {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.savedMeta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.savedBtn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.savedBtn:hover {
+  background: #1f2937;
+}
+
+.savedMetrics {
+  display: grid;
+  gap: 10px;
+}
+
+.savedMetricLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.savedMetricValue {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.savedMore {
+  margin-top: 12px;
+  border-top: 1px solid #1f2937;
+  padding-top: 10px;
+}
+
+.savedMoreLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.savedPre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  background: #000000;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  font-size: 12px;
+}

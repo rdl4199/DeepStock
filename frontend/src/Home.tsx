@@ -41,10 +41,7 @@ export default function Home(): JSX.Element {
     setLoading(true);
     setErr("");
     try {
-      const [pRes, sRes] = await Promise.all([
-        fetch(`${API}/api/series?symbol=${encodeURIComponent(sym)}`),
-        fetch(`${API}/api/signals?symbol=${encodeURIComponent(sym)}`),
-      ]);
+      const pRes = await fetch(`${API}/api/series?symbol=${encodeURIComponent(sym)}`);
 
       if (!pRes.ok) throw new Error(await pRes.text());
       const bars: Bar[] = await pRes.json();
@@ -54,7 +51,9 @@ export default function Home(): JSX.Element {
         close: +b.c,
       }));
       setData(rows);
-
+      
+      const sRes = await fetch(`${API}/api/signals?symbol=${encodeURIComponent(sym)}`);
+      
       if (sRes.ok) {
         setSignals(await sRes.json());
       }
@@ -76,7 +75,7 @@ export default function Home(): JSX.Element {
 
   return (
     <div>
-      <HamburgerMenu items={[{ label: "Homeeeee", href: "/" }, { label: "Saved", href: "/saved" }]} />
+      <HamburgerMenu items={[{ label: "Homeeeee", href: "/" }, { label: "Saved", href: "/savedpage" }]} />
       <div className="app-container">
         <h1 className="app-title">📈 {symbolHolder} Daily Close</h1>
 

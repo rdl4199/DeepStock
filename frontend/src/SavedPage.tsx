@@ -1,33 +1,49 @@
 import { useState } from "react";
+import SavedStockCard, { SavedStockDoc } from "./SavedStockCard";
 
 const API = import.meta.env.VITE_API_BASE as string;
 
 export function SavedPage(): JSX.Element {
-  const [mongoData, setMongoData] = useState<any[]>([]);
+  const [mongoData, setMongoData] = useState<SavedStockDoc[]>([]);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function loadMongoData(): Promise<void> {
-    fetch(`${API}/api/series-mongo`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`status ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        console.log("mongo data", data);
-        setMongoData(data);
-      })
-      .catch((e) => setErr(String(e)));
+    setLoading(true);
+    setErr("");
+    try {
+      const r = await fetch(`${API}/api/series-mongo`);
+      if (!r.ok) throw new Error(await r.text());
+
+      const data = await r.json();
+      // handle either array or single object
+      const arr = Array.isArray(data) ? data : [data];
+      setMongoData(arr);
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+      setMongoData([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div>
-      <h1>Saved Data</h1>
-      <button onClick={loadMongoData}>Load from Mongo</button>
-      {err && <p style={{ color: "red" }}>Error: {err}</p>}
+    <div className="app-container">
+      <h1 className="app-title">Saved Data</h1>
 
-      <pre style={{ textAlign: "left", maxHeight: "400px", overflow: "auto" }}>
-        {JSON.stringify(mongoData, null, 2)}
-      </pre>
+      <div className="symbol-controls">
+        <button className="load-button" onClick={loadMongoData}>
+          {loading ? "Loading…" : "Load from Mongo"}
+        </button>
+      </div>
+
+      {err && <div className="error-text">Error: {err}</div>}
+
+      <div className="savedGrid">
+        {mongoData.map((doc) => (
+          <SavedStockCard key={doc._id ?? doc.symbol} doc={doc} />
+        ))}
+      </div>
     </div>
   );
 }
