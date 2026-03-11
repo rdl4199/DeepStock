@@ -23,20 +23,35 @@ class IndicatorResponse(BaseModel):
 PRICE_SVC = "http://svc-pricing-go:8080"
 
 
-@app.get("/signals", response_model=IndicatorResponse)
-async def signals(symbol: str = Query(..., min_length=1)):
-    # Pull bars from Go service
-    async with httpx.AsyncClient(timeout=20) as client:
-        r = await client.get(f"{PRICE_SVC}/series", params={"symbol": symbol})
-        r.raise_for_status()
-        bars = r.json()
+class Bar(BaseModel):
+    t: str
+    o: float
+    h: float
+    l: float
+    c: float
+    v: float
 
-    df = pd.DataFrame(bars)
+class SignalsRequest(BaseModel):
+    symbol: str
+    bars: list[Bar]
+
+@app.post("/signals")
+async def signals(req: SignalsRequest):
+    df = pd.DataFrame([b.model_dump() for b in req.bars])
+
+    out = {"symbol": req.symbol}
+#async def signals(symbol: str = Query(..., min_length=1)):
+    # Pull bars from Go service
+    # async with httpx.AsyncClient(timeout=20) as client:
+    #     r = await client.get(f"{PRICE_SVC}/series", params={"symbol": symbol})
+    #     r.raise_for_status()
+    #     bars = r.json()
+
     # Expecting columns: t, o, h, l, c, v
     df["t"] = pd.to_datetime(df["t"])
     df = df.set_index("t").sort_index()
 
-    out: dict = {"symbol": symbol}
+    out: dict = {"symbol": req.symbol}
 
     # --- Trend: SMA / EMA ---
 

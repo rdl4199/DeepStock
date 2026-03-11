@@ -46,13 +46,32 @@ app.get("/api/series-mongo", async (req, res) => {
 
 
 // Proxy indicators: /api/signals?symbol=AAPL
-app.get("/api/signals", async (req, res) => {
-  const { symbol } = req.query;
-  if (!symbol) return res.status(400).json({ error: "missing symbol" });
+app.post("/api/signals", async (req, res) => {
+  const { symbol, bars } = req.body;
+
+  if (!symbol) {
+    return res.status(400).json({ error: "missing symbol" });
+  }
+
+  if (!Array.isArray(bars) || bars.length === 0) {
+    return res.status(400).json({ error: "missing bars" });
+  }
+
   try {
-    const r = await fetch(`${ML_SVC_URL}/signals?symbol=${encodeURIComponent(symbol)}`);
+    const r = await fetch(`${ML_SVC_URL}/signals`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ symbol, bars }),
+    });
+
     const body = await r.text();
-    res.status(r.status).type(r.headers.get("content-type") || "application/json").send(body);
+
+    res
+      .status(r.status)
+      .type(r.headers.get("content-type") || "application/json")
+      .send(body);
   } catch (e) {
     res.status(502).json({ error: "ml service unavailable", detail: String(e) });
   }

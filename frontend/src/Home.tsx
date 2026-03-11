@@ -52,8 +52,17 @@ export default function Home(): JSX.Element {
       }));
       setData(rows);
       
-      const sRes = await fetch(`${API}/api/signals?symbol=${encodeURIComponent(sym)}`);
-      
+      const sRes = await fetch(`${API}/api/signals`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          symbol: sym,
+          bars,
+        }),
+      });
+
       if (sRes.ok) {
         setSignals(await sRes.json());
       }
