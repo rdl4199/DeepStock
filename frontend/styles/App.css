@@ -156,7 +156,20 @@ body.menu-open .app-container {
 }
 
 .load-button {
-  padding: 10px 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.saveBtn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
   cursor: pointer;
 }
 
@@ -214,11 +227,17 @@ body.menu-open .app-container {
 
 .savedGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
+.savedMetric {
+  padding: 0 10px;
+  border-right: 1px solid rgba(255, 255, 255);
+}
 
+.savedMetric:last-child {
+  border-right: none;
+}
 .savedCard {
   background: #0f1115;
   border: 1px solid #1f2937;
@@ -260,8 +279,7 @@ body.menu-open .app-container {
 }
 
 .savedMetrics {
-  display: grid;
-  gap: 10px;
+  display: flex;
 }
 
 .savedMetricLabel {

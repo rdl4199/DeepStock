@@ -177,7 +177,7 @@ export default function Home(): JSX.Element {
 
         {!loading && data.length > 0 && (
           <div className="saveButton">
-            <button
+            <button className="saveBtn"
               onClick={async () => {
                 const latestSignals =
                   signals
