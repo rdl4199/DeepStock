@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SavedStockCard, { SavedStockDoc } from "./SavedStockCard";
+import HamburgerMenu from "./HamburgerMenu.tsx";
 
 const API = import.meta.env.VITE_API_BASE as string;
 
@@ -16,7 +17,6 @@ export function SavedPage(): JSX.Element {
       if (!r.ok) throw new Error(await r.text());
 
       const data = await r.json();
-      // handle either array or single object
       const arr = Array.isArray(data) ? data : [data];
       setMongoData(arr);
     } catch (e: any) {
@@ -27,16 +27,22 @@ export function SavedPage(): JSX.Element {
     }
   }
 
+  useEffect(() => {
+    loadMongoData();
+  }, []);
+
   return (
     <div className="app-container">
+      <HamburgerMenu
+        items={[
+          { label: "Homeeeee", href: "/" },
+          { label: "Saved", href: "/savedpage" },
+        ]}
+      />
+
       <h1 className="app-title">Saved Data</h1>
 
-      <div className="symbol-controls">
-        <button className="load-button" onClick={loadMongoData}>
-          {loading ? "Loading…" : "Load from Mongo"}
-        </button>
-      </div>
-
+      {loading && <div className="loading-text">Loading…</div>}
       {err && <div className="error-text">Error: {err}</div>}
 
       <div className="savedGrid">

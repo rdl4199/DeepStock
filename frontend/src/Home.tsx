@@ -86,7 +86,7 @@ export default function Home(): JSX.Element {
     <div>
       <HamburgerMenu items={[{ label: "Homeeeee", href: "/" }, { label: "Saved", href: "/savedpage" }]} />
       <div className="app-container">
-        <h1 className="app-title">📈 {symbolHolder} Daily Close</h1>
+        <h1 className="app-title">{symbolHolder} Daily Close</h1>
 
         <div className="symbol-controls">
           <input

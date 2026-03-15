@@ -65,7 +65,7 @@
 
   width: 260px;
   height: 100vh;
-  background: #0f1115;
+  background: #05070D;
   border-right: 1px solid #1f2937;
   color: #e5e7eb;
 
@@ -167,6 +167,7 @@ body.menu-open .app-container {
 }
 
 .app-title {
+  color: white;
   margin: 0;
   font-size: 28px;
 }
@@ -178,7 +179,12 @@ body.menu-open .app-container {
 }
 
 .symbol-input {
-  padding: 10px 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
+  cursor: pointer;
 }
 
 .load-button {
@@ -206,12 +212,12 @@ body.menu-open .app-container {
 }
 
 .loading-text {
-  opacity: 0.8;
+  color: gray;
 }
 
 .chart-wrapper {
   height: 420px;
-  background: #0f1115;
+  background: black;
   border: 1px solid #1f2937;
   border-radius: 12px;
   padding: 12px;
@@ -233,14 +239,15 @@ body.menu-open .app-container {
 }
 
 .footer {
+  color: gray;
   margin-top: 18px;
   opacity: 0.6;
   font-size: 12px;
 }
 
 .signalInfoBox {
-  border: 3px solid #000000;
-  background-color: #1f2937;
+  border: 1px solid #1f2937;
+  background-color: black;
   border-radius: 12px;
   padding: 12px;
   color: #e5e7eb;
@@ -267,7 +274,7 @@ body.menu-open .app-container {
   border-right: none;
 }
 .savedCard {
-  background: #0f1115;
+  background: black;
   border: 1px solid #1f2937;
   border-radius: 12px;
   padding: 12px;
@@ -346,4 +353,8 @@ body.menu-open .app-container {
   border: 1px solid #1f2937;
   border-radius: 12px;
   font-size: 12px;
+}
+
+body {
+  background: #0f1115
 }
