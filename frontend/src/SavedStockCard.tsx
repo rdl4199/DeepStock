@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { JSX, useMemo, useState } from "react";
 
 type PricePoint = { date: string; close: number };
-
 type AnyObj = Record<string, any>;
 
 export type SavedStockDoc = {
@@ -10,7 +9,12 @@ export type SavedStockDoc = {
   createdAt?: string;
   updatedAt?: string;
   data?: PricePoint[];
-  signals?: AnyObj; // signals has mixed shapes (arrays + sometimes a string "symbol")
+  signals?: AnyObj;
+};
+
+type SavedStockCardProps = {
+  doc: SavedStockDoc;
+  onDelete: (doc: SavedStockDoc) => Promise<void>;
 };
 
 function lastPoint<T = any>(v: any): T | undefined {
@@ -23,8 +27,12 @@ function fmt(n: any, digits = 2): string {
   return num.toFixed(digits);
 }
 
-export default function SavedStockCard({ doc }: { doc: SavedStockDoc }): JSX.Element {
+export default function SavedStockCard({
+  doc,
+  onDelete,
+}: SavedStockCardProps): JSX.Element {
   const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const lastPrice = useMemo(() => {
     const p = doc.data?.length ? doc.data[doc.data.length - 1] : undefined;
@@ -33,7 +41,6 @@ export default function SavedStockCard({ doc }: { doc: SavedStockDoc }): JSX.Ele
 
   const s = doc.signals ?? {};
 
-  // Key signals (grab latest element of each array)
   const rsi = lastPoint<{ value?: number }>(s.rsi14)?.value;
   const ema20 = lastPoint<{ value?: number }>(s.ema20)?.value;
   const ema50 = lastPoint<{ value?: number }>(s.ema50)?.value;
@@ -48,6 +55,20 @@ export default function SavedStockCard({ doc }: { doc: SavedStockDoc }): JSX.Ele
 
   const updated = doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : "--";
 
+  async function handleDelete(): Promise<void> {
+    if (deleting) return;
+
+    const confirmed = window.confirm(`Delete saved record for ${doc.symbol}?`);
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await onDelete(doc);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="savedCard">
       <div className="savedTopRow">
@@ -56,9 +77,19 @@ export default function SavedStockCard({ doc }: { doc: SavedStockDoc }): JSX.Ele
           <div className="savedMeta">Updated: {updated}</div>
         </div>
 
-        <button className="savedBtn" onClick={() => setOpen((v) => !v)}>
-          {open ? "Show less" : "Show more"}
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button className="savedBtn" onClick={() => setOpen((v) => !v)}>
+            {open ? "Show less" : "Show more"}
+          </button>
+
+          <button
+            className="deleteButton"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
       </div>
 
       <div className="savedMetrics">

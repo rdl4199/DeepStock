@@ -136,6 +136,16 @@ func main() {
 		})
 	})
 
+	mux.HandleFunc("/deleteSavedStocks", func(w http.ResponseWriter, r *http.Request) {
+		if r.method != http.MethodDelete {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		defer r.Body.Close()
+
+	})
+
 	log.Println("svc-pricing-go listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
@@ -280,4 +290,55 @@ func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64
 
 	inserted = res.UpsertedID != nil
 	return res.MatchedCount, res.ModifiedCount, inserted, nil
+}
+
+func deleteSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64, inserted bool, err error) {
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		return 0, 0, false, fmt.Errorf("MONGODB_URI is not set")
+	}
+	if stock.Symbol == "" {
+		return 0, 0, false, fmt.Errorf("stock.Symbol is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// v2 driver: no ctx passed to Connect
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		return 0, 0, false, err
+	}
+	defer client.Disconnect(ctx)
+
+	coll := client.Database("SavedStocks").Collection("SavedStocks")
+
+	normalizedData := stock.Data
+	if len(normalizedData) > 1 {
+		normalizedData = normalizedData[len(normalizedData)-1:]
+	}
+
+	normalizedSignals := latestOnlySignals(stock.Signals)
+	now := time.Now().UTC()
+
+	filter := bson.M{
+		"symbol": stock.Symbol,
+	}
+
+	// v2 driver: UpdateOne builder
+	opts := options.UpdateOne().SetUpsert(true)
+
+	res, err := coll.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, 0, false, err
+	}
+
+	deleteResult, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return 0, 0, false, err
+	}
+
+	fmt.Printf("Deleted %d documents\n", deleteResult.DeletedCount)
+
+	return res.MatchedCount, res.ModifiedCount, false, nil
 }
