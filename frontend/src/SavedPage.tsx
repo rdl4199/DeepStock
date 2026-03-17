@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import SavedStockCard, { SavedStockDoc } from "./SavedStockCard";
 import HamburgerMenu from "./HamburgerMenu.tsx";
 
@@ -12,6 +12,7 @@ export function SavedPage(): JSX.Element {
   async function loadMongoData(): Promise<void> {
     setLoading(true);
     setErr("");
+
     try {
       const r = await fetch(`${API}/api/series-mongo`);
       if (!r.ok) throw new Error(await r.text());
@@ -24,6 +25,31 @@ export function SavedPage(): JSX.Element {
       setMongoData([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(doc: SavedStockDoc): Promise<void> {
+    setErr("");
+
+    const idOrSymbol = doc._id ?? doc.symbol;
+
+    try {
+      // Assumes your backend supports:
+      // DELETE /api/series-mongo/:id
+      const r = await fetch(
+        `${API}/api/series-mongo/${encodeURIComponent(idOrSymbol)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!r.ok) {
+        throw new Error(await r.text());
+      }
+
+      await loadMongoData();
+    } catch (e: any) {
+      setErr(String(e?.message || e));
     }
   }
 
@@ -47,7 +73,11 @@ export function SavedPage(): JSX.Element {
 
       <div className="savedGrid">
         {mongoData.map((doc) => (
-          <SavedStockCard key={doc._id ?? doc.symbol} doc={doc} />
+          <SavedStockCard
+            key={doc._id ?? doc.symbol}
+            doc={doc}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
     </div>

@@ -137,13 +137,26 @@ func main() {
 	})
 
 	mux.HandleFunc("/deleteSavedStocks", func(w http.ResponseWriter, r *http.Request) {
-		if r.method != http.MethodDelete {
+		if r.Method != http.MethodDelete {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
 		defer r.Body.Close()
 
+		symbol := r.URL.Query().Get("id")
+		if symbol == "" {
+			http.Error(w, "missing ?symbol=XYZ", http.StatusBadRequest)
+			return
+		}
+
+		_, err := deleteSavedStock(symbol)
+		if err != nil {
+			http.Error(w, "failed to delete stock: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	log.Println("svc-pricing-go listening on :8080")
@@ -292,53 +305,35 @@ func upsertSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64
 	return res.MatchedCount, res.ModifiedCount, inserted, nil
 }
 
-func deleteSavedStock(stock SavedStock) (matchedCount int64, modifiedCount int64, inserted bool, err error) {
+func deleteSavedStock(symbol string) (deletedCount int64, err error) {
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
-		return 0, 0, false, fmt.Errorf("MONGODB_URI is not set")
+		return 0, fmt.Errorf("MONGODB_URI is not set")
 	}
-	if stock.Symbol == "" {
-		return 0, 0, false, fmt.Errorf("stock.Symbol is required")
+	if symbol == "" {
+		return 0, fmt.Errorf("stock.Symbol is required")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// v2 driver: no ctx passed to Connect
 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
-		return 0, 0, false, err
+		return 0, err
 	}
 	defer client.Disconnect(ctx)
 
 	coll := client.Database("SavedStocks").Collection("SavedStocks")
 
-	normalizedData := stock.Data
-	if len(normalizedData) > 1 {
-		normalizedData = normalizedData[len(normalizedData)-1:]
-	}
-
-	normalizedSignals := latestOnlySignals(stock.Signals)
-	now := time.Now().UTC()
-
 	filter := bson.M{
-		"symbol": stock.Symbol,
-	}
-
-	// v2 driver: UpdateOne builder
-	opts := options.UpdateOne().SetUpsert(true)
-
-	res, err := coll.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		return 0, 0, false, err
+		"symbol": symbol,
 	}
 
 	deleteResult, err := coll.DeleteOne(ctx, filter)
 	if err != nil {
-		return 0, 0, false, err
+		return 0, err
 	}
 
 	fmt.Printf("Deleted %d documents\n", deleteResult.DeletedCount)
-
-	return res.MatchedCount, res.ModifiedCount, false, nil
+	return deleteResult.DeletedCount, nil
 }
