@@ -358,3 +358,72 @@ body.menu-open .app-container {
 body {
   background: #0f1115
 }
+
+.siteFooter {
+  margin-top: 32px;
+  padding: 18px 20px 14px;
+  background: #0f1115;
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  color: #e5e7eb;
+}
+
+.siteFooterInner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.siteFooterLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.siteFooterBrand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.siteFooterText {
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.5;
+  max-width: 520px;
+}
+
+.siteFooterRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.siteFooterLink {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
+  text-decoration: none;
+  font-size: 13px;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.siteFooterLink:hover {
+  background: #1f2937;
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.siteFooterBottom {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #1f2937;
+  font-size: 12px;
+  color: #9ca3af;
+}

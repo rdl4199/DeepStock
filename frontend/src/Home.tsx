@@ -11,6 +11,7 @@ import {
 import SignalBox from "./SignalBox.tsx";
 import "../styles/App.css";
 import HamburgerMenu from "./HamburgerMenu.tsx";
+import SiteFooter from "./SiteFooter.tsx";
 
 const API = import.meta.env.VITE_API_BASE as string;
 
@@ -219,7 +220,7 @@ export default function Home(): JSX.Element {
           </div>
         )}
 
-        <footer className="footer">Gateway: {API}</footer>
+        <SiteFooter appName="DeepStock" />
       </div>
     </div>
   );
