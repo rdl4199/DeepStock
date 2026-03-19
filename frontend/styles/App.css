@@ -147,9 +147,13 @@
 
 /* Leave room for the top-left hamburger even when closed */
 .app-container {
-  padding: 24px 28px 24px 72px; /* left padding prevents title under button */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px 24px 72px;
   max-width: 1100px;
   margin: 0 auto;
+  box-sizing: border-box;
   transition: padding-left 180ms cubic-bezier(.2,.8,.2,1);
 }
 
@@ -158,13 +162,6 @@ body.menu-open .app-container {
   padding-left: 300px; /* 260 sidebar + some spacing */
 }
 
-
-
-.app-container {
-  padding: 24px 28px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
 
 .app-title {
   color: white;
@@ -360,26 +357,12 @@ body {
 }
 
 .siteFooter {
-  margin-top: 32px;
+  margin-top: auto;
   padding: 18px 20px 14px;
   background: #0f1115;
   border: 1px solid #1f2937;
   border-radius: 14px;
   color: #e5e7eb;
-}
-
-.siteFooterInner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.siteFooterLeft {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .siteFooterBrand {
@@ -390,34 +373,10 @@ body {
 }
 
 .siteFooterText {
+  margin-top: 6px;
   font-size: 13px;
   color: #9ca3af;
   line-height: 1.5;
-  max-width: 520px;
-}
-
-.siteFooterRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.siteFooterLink {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #1f2937;
-  background: #111827;
-  color: #e5e7eb;
-  text-decoration: none;
-  font-size: 13px;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.siteFooterLink:hover {
-  background: #1f2937;
-  border-color: #374151;
-  color: #ffffff;
 }
 
 .siteFooterBottom {

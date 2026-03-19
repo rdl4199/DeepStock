@@ -49,11 +49,16 @@ app.delete("/api/series-mongo/:id", async (req, res) => {
   if (!id) return res.status(400).json({ error: "missing id" });
 
   try {
-    const r = await fetch(`${PRICE_SVC_URL}/deleteSavedStock/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
+    const r = await fetch(
+      `${PRICE_SVC_URL}/deleteSavedStocks?id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    );
+
     const body = await r.text();
-    res.status(r.status).type(r.headers.get("content-type") || "application/json").send(body);
+    res
+      .status(r.status)
+      .type(r.headers.get("content-type") || "application/json")
+      .send(body);
   } catch (e) {
     res.status(502).json({ error: "pricing service unavailable", detail: String(e) });
   }

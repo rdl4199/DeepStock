@@ -31,13 +31,11 @@ export function SavedPage(): JSX.Element {
   async function handleDelete(doc: SavedStockDoc): Promise<void> {
     setErr("");
 
-    const idOrSymbol = doc._id ?? doc.symbol;
-
     try {
       // Assumes your backend supports:
       // DELETE /api/series-mongo/:id
       const r = await fetch(
-        `${API}/api/series-mongo/${encodeURIComponent(idOrSymbol)}`,
+        `${API}/api/series-mongo/${encodeURIComponent(doc.symbol)}`,
         {
           method: "DELETE",
         }
