@@ -8,12 +8,38 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	openai "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/responses"
 )
+
+type HoldingSnapshot struct {
+	Symbol        string         `json:"symbol"`
+	LatestDate    string         `json:"latestDate"`
+	SavedClose    float64        `json:"savedClose"`
+	LatestClose   float64        `json:"latestClose"`
+	DayChangePct  float64        `json:"dayChangePct"`
+	SinceSavedPct float64        `json:"sinceSavedPct"`
+	SMA20         float64        `json:"sma20"`
+	SMA50         float64        `json:"sma50"`
+	Trend20       string         `json:"trend20"`
+	Trend50       string         `json:"trend50"`
+	SavedSignals  map[string]any `json:"savedSignals,omitempty"`
+}
+
+type PortfolioAnalysisResponse struct {
+	GeneratedAt string            `json:"generatedAt"`
+	Holdings    []HoldingSnapshot `json:"holdings"`
+	Analysis    string            `json:"analysis"`
+	Warnings    []string          `json:"warnings,omitempty"`
+}
 
 type Bar struct {
 	T time.Time `json:"t"`
@@ -31,8 +57,104 @@ type cacheEntry struct {
 
 var cache = map[string]cacheEntry{}
 
+type SavedStockDoc struct {
+	Symbol    string         `json:"symbol" bson:"symbol"`
+	Data      []PricePoint   `json:"data" bson:"data"`
+	Signals   map[string]any `json:"signals" bson:"signals"`
+	CreatedAt time.Time      `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt time.Time      `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+}
+
+func fetchSavedStocksTyped() ([]SavedStockDoc, error) {
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		return nil, fmt.Errorf("MONGODB_URI is not set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
+	defer client.Disconnect(ctx)
+
+	coll := client.Database("SavedStocks").Collection("SavedStocks")
+
+	cur, err := coll.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var results []SavedStockDoc
+	if err := cur.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func fetchSeriesForSymbol(symbol, apiKey string) ([]Bar, error) {
+	if symbol == "" {
+		return nil, fmt.Errorf("missing symbol")
+	}
+
+	symbol = strings.ToUpper(strings.TrimSpace(symbol))
+
+	if ce, ok := cache[symbol]; ok && time.Now().Before(ce.expiresAt) {
+		return ce.data, nil
+	}
+
+	url := fmt.Sprintf(
+		"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&apikey=%s",
+		symbol, apiKey,
+	)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("provider error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var raw map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return nil, fmt.Errorf("decode error: %w", err)
+	}
+
+	ts, ok := raw["Time Series (Daily)"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("no time series returned (possibly rate limited)")
+	}
+
+	bars := make([]Bar, 0, len(ts))
+	for day, v := range ts {
+		row, _ := v.(map[string]any)
+		t, _ := time.Parse("2006-01-02", day)
+
+		bars = append(bars, Bar{
+			T: t,
+			O: atof(row["1. open"]),
+			H: atof(row["2. high"]),
+			L: atof(row["3. low"]),
+			C: atof(row["4. close"]),
+			V: atof(row["5. volume"]),
+		})
+	}
+
+	sort.Slice(bars, func(i, j int) bool { return bars[i].T.Before(bars[j].T) })
+
+	cache[symbol] = cacheEntry{
+		data:      bars,
+		expiresAt: time.Now().Add(60 * time.Second),
+	}
+
+	return bars, nil
+}
+
 func main() {
-	apiKey := "B183J50JYZ0L7NSF" //os.Getenv("ALPHAVANTAGE_API_KEY")
+	apiKey := os.Getenv("ALPHAVANTAGE_API_KEY")
 	if apiKey == "" {
 		log.Fatal("ALPHAVANTAGE_API_KEY not set")
 	}
@@ -47,52 +169,19 @@ func main() {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+
 		symbol := r.URL.Query().Get("symbol")
 		if symbol == "" {
-			http.Error(w, "missing ?symbol=XYZ", http.StatusBadRequest)
+			http.Error(w, "missing ?id=XYZ", http.StatusBadRequest)
 			return
 		}
-		if ce, ok := cache[symbol]; ok && time.Now().Before(ce.expiresAt) {
-			respondJSON(w, ce.data)
-			return
-		}
-		url := fmt.Sprintf(
-			"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&apikey=%s",
-			symbol, apiKey,
-		)
-		resp, err := http.Get(url)
+
+		bars, err := fetchSeriesForSymbol(symbol, apiKey)
 		if err != nil {
-			http.Error(w, "provider error", http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-
-		var raw map[string]any
-		if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-			http.Error(w, "decode error", http.StatusBadGateway)
-			return
-		}
-		ts, ok := raw["Time Series (Daily)"].(map[string]any)
-		if !ok {
-			fmt.Println("raw:", raw)
-			http.Error(w, "no time series (rate-limited?)", http.StatusTooManyRequests)
+			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
 
-		bars := make([]Bar, 0, len(ts))
-		for day, v := range ts {
-			row, _ := v.(map[string]any)
-			t, _ := time.Parse("2006-01-02", day)
-			o := atof(row["1. open"])
-			h := atof(row["2. high"])
-			l := atof(row["3. low"])
-			c := atof(row["4. close"])
-			vol := atof(row["5. volume"])
-			bars = append(bars, Bar{T: t, O: o, H: h, L: l, C: c, V: vol})
-		}
-		sort.Slice(bars, func(i, j int) bool { return bars[i].T.Before(bars[j].T) })
-
-		cache[symbol] = cacheEntry{data: bars, expiresAt: time.Now().Add(60 * time.Second)}
 		respondJSON(w, bars)
 	})
 
@@ -159,6 +248,92 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	mux.HandleFunc("/portfolioAnalysis", func(w http.ResponseWriter, r *http.Request) {
+		enableCORS(w, r)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		savedStocks, err := fetchSavedStocksTyped()
+		if err != nil {
+			http.Error(w, "failed to load saved stocks: "+err.Error(), http.StatusBadGateway)
+			return
+		}
+
+		if len(savedStocks) == 0 {
+			respondJSON(w, PortfolioAnalysisResponse{
+				GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+				Holdings:    []HoldingSnapshot{},
+				Analysis:    "No saved holdings found.",
+			})
+			return
+		}
+
+		var holdings []HoldingSnapshot
+		var warnings []string
+
+		for _, stock := range savedStocks {
+			bars, err := fetchSeriesForSymbol(stock.Symbol, apiKey)
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf("%s: %v", stock.Symbol, err))
+				continue
+			}
+
+			if len(bars) < 2 {
+				warnings = append(warnings, fmt.Sprintf("%s: not enough price history", stock.Symbol))
+				continue
+			}
+
+			latest := bars[len(bars)-1]
+			prev := bars[len(bars)-2]
+
+			var savedClose float64
+			if len(stock.Data) > 0 {
+				savedClose = stock.Data[len(stock.Data)-1].Close
+			}
+
+			sma20 := smaFromBars(bars, 20)
+			sma50 := smaFromBars(bars, 50)
+
+			holding := HoldingSnapshot{
+				Symbol:        strings.ToUpper(stock.Symbol),
+				LatestDate:    latest.T.Format("2006-01-02"),
+				SavedClose:    savedClose,
+				LatestClose:   latest.C,
+				DayChangePct:  pctChange(prev.C, latest.C),
+				SinceSavedPct: pctChange(savedClose, latest.C),
+				SMA20:         sma20,
+				SMA50:         sma50,
+				Trend20:       trendLabel(latest.C, sma20),
+				Trend50:       trendLabel(latest.C, sma50),
+				SavedSignals:  stock.Signals,
+			}
+
+			holdings = append(holdings, holding)
+		}
+
+		analysis := "Could not generate analysis."
+		if len(holdings) > 0 {
+			analysis, err = analyzePortfolioWithOpenAI(holdings)
+			if err != nil {
+				warnings = append(warnings, "OpenAI analysis failed: "+err.Error())
+				analysis = "Portfolio snapshot generated, but AI commentary could not be created."
+			}
+		}
+
+		respondJSON(w, PortfolioAnalysisResponse{
+			GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+			Holdings:    holdings,
+			Analysis:    analysis,
+			Warnings:    warnings,
+		})
+	})
+
 	log.Println("svc-pricing-go listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
@@ -179,7 +354,7 @@ func atof(x any) float64 {
 func enableCORS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "GET,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS")
 }
 
 func respondJSON(w http.ResponseWriter, v any) {
@@ -336,4 +511,87 @@ func deleteSavedStock(symbol string) (deletedCount int64, err error) {
 
 	fmt.Printf("Deleted %d documents\n", deleteResult.DeletedCount)
 	return deleteResult.DeletedCount, nil
+}
+
+func analyzePortfolioWithOpenAI(holdings []HoldingSnapshot) (string, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("OPENAI_API_KEY is not set")
+	}
+
+	client := openai.NewClient(
+		option.WithAPIKey(apiKey),
+	)
+
+	payload := map[string]any{
+		"generatedAt": time.Now().UTC().Format(time.RFC3339),
+		"holdings":    holdings,
+	}
+
+	b, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	prompt := fmt.Sprintf(`
+You are analyzing a stock portfolio snapshot.
+
+Rules:
+- Use only the JSON provided below.
+- Do not invent market news, earnings, analyst ratings, or macro events.
+- Do not tell the user to buy or sell.
+- Give a concise portfolio summary.
+- Mention each holding.
+- Point out obvious strengths or risks based on trend and performance fields only.
+- If the data is limited, say so clearly.
+
+Portfolio JSON:
+%s
+`, string(b))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
+		Model: openai.ChatModel("gpt-5.4-mini"),
+		Input: responses.ResponseNewParamsInputUnion{
+			OfString: openai.String(prompt),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return resp.OutputText(), nil
+}
+
+func pctChange(from, to float64) float64 {
+	if from == 0 {
+		return 0
+	}
+	return ((to - from) / from) * 100
+}
+
+func smaFromBars(bars []Bar, n int) float64 {
+	if len(bars) < n || n <= 0 {
+		return 0
+	}
+	var sum float64
+	for _, b := range bars[len(bars)-n:] {
+		sum += b.C
+	}
+	return sum / float64(n)
+}
+
+func trendLabel(price, avg float64) string {
+	if avg == 0 {
+		return "unknown"
+	}
+	if price > avg {
+		return "above"
+	}
+	if price < avg {
+		return "below"
+	}
+	return "at"
 }

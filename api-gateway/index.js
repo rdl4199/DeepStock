@@ -125,4 +125,21 @@ app.post("/api/saved-stocks", async (req, res) => {
   }
 });
 
+app.get("/api/portfolio-analysis", async (req, res) => {
+  try {
+    const r = await fetch(`${PRICE_SVC_URL}/portfolioAnalysis`);
+    const body = await r.text();
+
+    return res
+      .status(r.status)
+      .type(r.headers.get("content-type") || "application/json")
+      .send(body);
+  } catch (e) {
+    return res.status(502).json({
+      error: "pricing service unavailable",
+      detail: String(e),
+    });
+  }
+});
+
 app.listen(PORT, () => console.log(`api-gateway on :${PORT}`));
