@@ -78,7 +78,7 @@ export default function SavedStockCard({
         </div>
 
         <div style={{ display: "flex", gap: "8px" }}>
-          <button className="savedBtn" onClick={() => setOpen((v) => !v)}>
+          <button className="showMoreBtn" onClick={() => setOpen((v) => !v)}>
             {open ? "Show less" : "Show more"}
           </button>
 

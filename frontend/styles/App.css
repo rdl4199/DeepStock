@@ -297,7 +297,7 @@ body.menu-open .app-container {
   color: #9ca3af;
 }
 
-.savedBtn {
+.deleteButton {
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #1f2937;
@@ -306,7 +306,20 @@ body.menu-open .app-container {
   cursor: pointer;
 }
 
-.savedBtn:hover {
+.deleteButton:hover {
+  background: #1f2937;
+}
+
+.showMoreBtn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.showMoreBtn:hover {
   background: #1f2937;
 }
 
