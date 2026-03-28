@@ -1,6 +1,7 @@
 import { JSX, useEffect, useState } from "react";
 import SavedStockCard, { SavedStockDoc } from "./SavedStockCard";
 import HamburgerMenu from "./HamburgerMenu.tsx";
+import PortfolioChatBox from "./PortfolioChatBox";
 
 const API = import.meta.env.VITE_API_BASE as string;
 
@@ -32,8 +33,6 @@ export function SavedPage(): JSX.Element {
     setErr("");
 
     try {
-      // Assumes your backend supports:
-      // DELETE /api/series-mongo/:id
       const r = await fetch(
         `${API}/api/series-mongo/${encodeURIComponent(doc.symbol)}`,
         {
@@ -68,6 +67,8 @@ export function SavedPage(): JSX.Element {
 
       {loading && <div className="loading-text">Loading…</div>}
       {err && <div className="error-text">Error: {err}</div>}
+
+      <PortfolioChatBox holdings={mongoData} />
 
       <div className="savedGrid">
         {mongoData.map((doc) => (

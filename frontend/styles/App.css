@@ -399,3 +399,41 @@ body {
   font-size: 12px;
   color: #9ca3af;
 }
+
+.portfolioChatCard {
+  margin-top: 12px;
+}
+
+.portfolioChatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.portfolioChatBubble {
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px;
+  color: #e5e7eb;
+}
+
+.portfolioChatBubble.assistant {
+  background: #05070D;
+}
+
+.portfolioChatBubble.user {
+  background: #111827;
+}
+
+.portfolioChatInputRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.portfolioChatInput {
+  flex: 1;
+}
